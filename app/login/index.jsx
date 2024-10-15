@@ -1,18 +1,18 @@
-import { View, Text, Image, Pressable } from 'react-native'
+import { View, Text, Image, Pressable, ScrollView } from 'react-native'
 import React from 'react'
 import Colors from './../../constants/Colors'
 import { Link } from 'expo-router';
 
 export default function LoginScreen() {
   return (
-    <View style={{
+    <ScrollView style={{
         backgroundColor:Colors.WHITE,
         flex:1
     }}>
         <Image source={require('./../../assets/images/login.png')}
             style={{
                 width:'100%',
-                height: 500
+                height: 400
             }}
         />
         <View style={{
@@ -48,6 +48,6 @@ export default function LoginScreen() {
                 }}>Get Started</Text>
             </Link>   
         </View>
-    </View>
+    </ScrollView>
   )
 }

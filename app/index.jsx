@@ -10,7 +10,7 @@ export default function Index() {
     >
       <Link href={'/login'}>
         <Text>
-          login otin
+          go to su app 
         </Text>
       </Link>
     </View>
