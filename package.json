@@ -16,13 +16,15 @@
   "dependencies": {
     "@clerk/clerk-expo": "^2.2.24",
     "@expo/metro-runtime": "^3.2.3",
-    "@expo/vector-icons": "^14.0.2",
+    "@expo/vector-icons": "^14.0.4",
     "@react-native-firebase/app": "^17.4.2",
     "@react-native-firebase/auth": "^17.4.2",
     "@react-native-firebase/crashlytics": "^17.4.2",
+    "@react-navigation/bottom-tabs": "^6.6.1",
     "@react-navigation/native": "^6.1.18",
     "@react-navigation/native-stack": "^6.11.0",
     "expo": "^51.0.37",
+    "expo-auth-session": "^5.5.2",
     "expo-constants": "~16.0.2",
     "expo-font": "~12.0.10",
     "expo-linking": "~6.3.1",
@@ -37,8 +39,8 @@
     "react-native": "0.74.5",
     "react-native-gesture-handler": "~2.16.1",
     "react-native-reanimated": "~3.10.1",
-    "react-native-safe-area-context": "^4.10.5",
-    "react-native-screens": "^3.31.1",
+    "react-native-safe-area-context": "4.10.5",
+    "react-native-screens": "3.31.1",
     "react-native-web": "^0.19.12"
   },
   "devDependencies": {

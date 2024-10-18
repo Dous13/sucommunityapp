@@ -1,6 +1,6 @@
 import { View, Text, Image, Pressable, ScrollView } from 'react-native'
 import React from 'react'
-import Colors from './../../constants/Colors'
+import Colors from '../../constants/Colors'
 import { Link } from 'expo-router';
 
 export default function LoginScreen() {

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import Colors from '../../constants/Colors'
+import { Link } from 'expo-router';
 
 export default function SignInPage() {
   const [email, setEmail] = useState('');
@@ -34,7 +36,7 @@ export default function SignInPage() {
         secureTextEntry
         autoCapitalize="none"
       />
-
+      
       <TouchableOpacity style={styles.button} onPress={handleSignIn}>
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
@@ -42,6 +44,20 @@ export default function SignInPage() {
       <TouchableOpacity style={styles.googleButton} onPress={handleGoogleSignIn}>
         <Text style={styles.buttonText}>Login with Google</Text>
       </TouchableOpacity>
+      <Link href={'/navigator/BottomTabNavigator'} style={{
+                padding:14,
+                marginTop:100,
+                backgroundColor:Colors.PRIMARY,
+                width:'100%',
+                borderRadius:40,
+                textAlign:'center'
+            }}>
+          <Text style={{
+                    fontFamily:'coolvetica',
+                    color:'white',
+                    fontSize:20
+                }}>Home</Text>
+      </Link>
     </View>
   );
 }
