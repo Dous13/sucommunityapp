@@ -13,6 +13,7 @@ export default function BottomTabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
+        headerShown: false,
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
 
@@ -43,11 +44,11 @@ export default function BottomTabNavigator() {
         tabBarInactiveTintColor: '#8F8e8d', // Gray color
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Books" component={BooksScreen} />
-      <Tab.Screen name="Cafeteria" component={CafeteriaScreen} />
-      <Tab.Screen name="Notifications" component={NotificationsScreen} />
-      <Tab.Screen name="Messages" component={MessagesScreen} />
+      <Tab.Screen name="Home" component={HomeScreen} options={{headerShown: false}}/>
+      <Tab.Screen name="Books" component={BooksScreen} options={{headerShown: false}}/>
+      <Tab.Screen name="Cafeteria" component={CafeteriaScreen} options={{headerShown: false}}/>
+      <Tab.Screen name="Notifications" component={NotificationsScreen} options={{headerShown: false}}/>
+      <Tab.Screen name="Messages" component={MessagesScreen} options={{headerShown: false}}/>
     </Tab.Navigator>
   );
 }
