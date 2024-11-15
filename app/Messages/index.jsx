@@ -43,7 +43,7 @@ export default function MessagesScreen() {
   return (
     <View style={styles.container}>
       {loading ? (
-        <ActivityIndicator size="large" color="#F95454" />
+        <ActivityIndicator size="large" color="#CB3737" />
       ) : (
         <FlatList
           data={messages}
@@ -62,7 +62,7 @@ export default function MessagesScreen() {
           style={styles.input}
           value={newMessage}
           onChangeText={setNewMessage}
-          placeholder="Type a message"
+          placeholder="Message"
         />
         <Button 
           title="Send" 
