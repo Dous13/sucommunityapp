@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 import { collection, addDoc, query, onSnapshot, orderBy } from 'firebase/firestore';
-import { db } from '../../config/FirebaseConfig';
+import { db } from '../../config/FirebaseConfig.js';
 
 export default function MessagesScreen() {
   const [messages, setMessages] = useState([]);

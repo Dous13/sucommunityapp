@@ -1,18 +1,43 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import Colors from '../../constants/Colors'
-import { Link } from 'expo-router';
+import { db } from '../../config/FirebaseConfig'; // Your Firebase config
+import { collection, query, where, getDocs } from 'firebase/firestore'; // Firestore query methods
+import { useRouter } from 'expo-router'; // Import the router from expo-router
 
 export default function SignInPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState(null); // Error state
+  const router = useRouter(); // Hook to handle navigation
 
-  const handleSignIn = () => {
-    // Handle sign-in logic
-  };
+  const handleSignIn = async () => {
+    if (!email || !password) {
+      setError("Please enter your email and password.");
+      return;
+    }
 
-  const handleGoogleSignIn = () => {
-    // Handle Google sign-in logic
+    try {
+      const q = query(collection(db, "users"), where("Email", "==", email)); // Query by email
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        setError("User not found.");
+        return;
+      }
+
+      querySnapshot.forEach((doc) => {
+        const userData = doc.data();
+        
+        if (userData.Password === password) {
+          console.log("Sign-in successful!");
+          router.push('../../navigator/BottomTabNavigator'); // Navigate to /home (index.jsx inside app/Home) immediately
+        } else {
+          setError("Incorrect password.");
+        }
+      });
+    } catch (error) {
+      setError("Error during sign-in. Please try again.");
+    }
   };
 
   return (
@@ -21,7 +46,6 @@ export default function SignInPage() {
       <TextInput
         style={styles.input}
         placeholder="Email"
-        placeholderTextColor={styles.placeholder.color}
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
@@ -30,34 +54,17 @@ export default function SignInPage() {
       <TextInput
         style={styles.input}
         placeholder="Password"
-        placeholderTextColor={styles.placeholder.color}
         value={password}
         onChangeText={setPassword}
         secureTextEntry
         autoCapitalize="none"
       />
-      
+
+      {error && <Text style={styles.errorText}>{error}</Text>}
+
       <TouchableOpacity style={styles.button} onPress={handleSignIn}>
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
-
-      <TouchableOpacity style={styles.googleButton} onPress={handleGoogleSignIn}>
-        <Text style={styles.buttonText}>Login with Google</Text>
-      </TouchableOpacity>
-      <Link href={'/navigator/BottomTabNavigator'} style={{
-                padding:14,
-                marginTop:100,
-                backgroundColor:Colors.PRIMARY,
-                width:'100%',
-                borderRadius:40,
-                textAlign:'center'
-            }}>
-          <Text style={{
-                    fontFamily:'coolvetica',
-                    color:'white',
-                    fontSize:20
-                }}>Home</Text>
-      </Link>
     </View>
   );
 }
@@ -88,9 +95,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     color: '#333',
   },
-  placeholder: {
-    color: '#8F8e8d',
-  },
   button: {
     backgroundColor: '#F95454',
     width: '100%',
@@ -99,16 +103,13 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     alignItems: 'center',
   },
-  googleButton: {
-    backgroundColor: '#8F8e8d',
-    width: '100%',
-    paddingVertical: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
   buttonText: {
     color: '#fff',
     fontSize: 18,
     fontWeight: '600',
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 10,
   },
 });
