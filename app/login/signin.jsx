@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { db } from '../../config/FirebaseConfig'; // Your Firebase config
 import { collection, query, where, getDocs } from 'firebase/firestore'; // Firestore query methods
 import { useRouter } from 'expo-router'; // Import the router from expo-router
@@ -8,6 +8,7 @@ export default function SignInPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null); // Error state
+  const [loading, setLoading] = useState(false); // Loading state
   const router = useRouter(); // Hook to handle navigation
 
   const handleSignIn = async () => {
@@ -16,27 +17,34 @@ export default function SignInPage() {
       return;
     }
 
+    setLoading(true); // Start loading
+    setError(null);   // Clear any previous error
+
     try {
       const q = query(collection(db, "users"), where("Email", "==", email)); // Query by email
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
         setError("User not found.");
+        setLoading(false); // Stop loading
         return;
       }
 
       querySnapshot.forEach((doc) => {
         const userData = doc.data();
-        
+
         if (userData.Password === password) {
           console.log("Sign-in successful!");
-          router.push('../../navigator/BottomTabNavigator'); // Navigate to /home (index.jsx inside app/Home) immediately
+          setLoading(false); // Stop loading
+          router.push('../../navigator/BottomTabNavigator'); // Navigate to BottomTabNavigator
         } else {
           setError("Incorrect password.");
+          setLoading(false); // Stop loading
         }
       });
     } catch (error) {
       setError("Error during sign-in. Please try again.");
+      setLoading(false); // Stop loading
     }
   };
 
@@ -62,9 +70,13 @@ export default function SignInPage() {
 
       {error && <Text style={styles.errorText}>{error}</Text>}
 
-      <TouchableOpacity style={styles.button} onPress={handleSignIn}>
-        <Text style={styles.buttonText}>Login</Text>
-      </TouchableOpacity>
+      {loading ? (
+        <ActivityIndicator size="large" color="#F95454" /> // Show loading spinner
+      ) : (
+        <TouchableOpacity style={styles.button} onPress={handleSignIn}>
+          <Text style={styles.buttonText}>Login</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
