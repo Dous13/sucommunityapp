@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image } from 'react-native';
 import { db } from '../../config/FirebaseConfig'; // Adjust this path based on your folder structure
 import { collection, onSnapshot } from 'firebase/firestore';
 
@@ -13,17 +13,28 @@ export default function Notifications() {
         id: doc.id,
         ...doc.data(),
       }));
+
       console.log("Fetched Notifications:", notifData); // Debugging
       setNotifications(notifData);
     });
-  
+
     return () => unsubscribe();
-  }, []);  
+  }, []);
 
   const renderNotification = ({ item }) => (
     <View style={styles.notificationItem}>
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.body}>{item.body}</Text>
+      <Image
+        style={styles.avatar}
+        source={{
+          uri: item.profilePic || 'https://via.placeholder.com/40', // Placeholder profile picture
+        }}
+      />
+      <View style={styles.notificationContent}>
+        <Text style={styles.body}>
+          <Text style={styles.username}>{item.username || "Someone"} </Text>
+          {item.body}
+        </Text>
+      </View>
     </View>
   );
 
@@ -46,27 +57,41 @@ export default function Notifications() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    paddingTop: 20,
     backgroundColor: '#F4F6FF',
   },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#F95454',
-    marginBottom: 20,
+    marginLeft: 20,
+    marginBottom: 10,
   },
   notificationItem: {
     backgroundColor: '#fff',
-    padding: 15,
-    marginVertical: 8,
-    borderRadius: 10,
+    paddingVertical: 10,
+    paddingLeft: 15,
+    paddingRight: 10,
+    marginBottom: 0,
+    borderRadius: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 2,
   },
-  title: {
-    fontSize: 18,
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 15,
+  },
+  notificationContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  username: {
     fontWeight: 'bold',
     color: '#333',
   },
