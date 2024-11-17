@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import {View,Text,TextInput,FlatList,StyleSheet,TouchableOpacity,ActivityIndicator,} from 'react-native';
-import { useRouter } from "expo-router"; // Import useRouter for navigation
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '../../config/FirebaseConfig.js';
 import { collection, query, where, addDoc, onSnapshot, getDoc, doc } from 'firebase/firestore';
 
 export default function MessagesScreen() {
-  const router = useRouter(); 
+  const router = useRouter();
   const [currentUserId, setCurrentUserId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -15,11 +15,11 @@ export default function MessagesScreen() {
 
   useEffect(() => {
     const fetchUserId = async () => {
-      const userId = await AsyncStorage.getItem("userId");
+      const userId = await AsyncStorage.getItem('userId');
       if (userId) {
         setCurrentUserId(userId);
       } else {
-        console.error("No user ID found. Ensure login logic is implemented.");
+        console.error('No user ID found. Ensure login logic is implemented.');
       }
     };
     fetchUserId();
@@ -34,7 +34,7 @@ export default function MessagesScreen() {
       const convos = await Promise.all(
         snapshot.docs.map(async (doc) => {
           const convoData = doc.data();
-          const participants = convoData.participants.filter(id => id !== currentUserId);
+          const participants = convoData.participants.filter((id) => id !== currentUserId);
 
           const fetchNames = participants.map(async (id) => {
             const userDoc = await getDoc(doc(db, 'users', id));
@@ -59,11 +59,16 @@ export default function MessagesScreen() {
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
-
+  
     setLoading(true);
     const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('Email', '==', searchQuery));
-
+    
+    const q = query(
+      usersRef,
+      where('Email', '>=', searchQuery),  
+      where('Email', '<=', searchQuery + '\uf8ff') 
+    );
+  
     const unsubscribe = onSnapshot(q, async (snapshot) => {
       const users = await Promise.all(snapshot.docs.map(async (doc) => {
         const userData = doc.data();
@@ -76,20 +81,20 @@ export default function MessagesScreen() {
       setSearchResults(users);
       setLoading(false);
     });
-
+  
     return () => unsubscribe();
   };
 
   const handleStartConversation = async (user) => {
     if (!currentUserId) return;
-
+  
     setLoading(true);
-
+  
     const conversationsRef = collection(db, 'conversations');
     const existingConversation = conversations.find(
       (c) => c.participants.includes(user.id)
     );
-
+  
     let conversationId;
     if (existingConversation) {
       conversationId = existingConversation.id;
@@ -101,13 +106,18 @@ export default function MessagesScreen() {
       const docRef = await addDoc(conversationsRef, newConversation);
       conversationId = docRef.id;
     }
-
+  
     setLoading(false);
     setSearchQuery('');
     setSearchResults([]);
-
-    router.push(`/chat/${conversationId}`);
-  };
+  
+    // Navigate to the chat screen with the conversation ID
+    if (conversationId) {
+      router.push(`/Messages/${conversationId}`);  // Include conversation ID in the URL
+    } else {
+      console.error("Failed to create or find the conversation.");
+    }
+  };  
 
   return (
     <View style={styles.container}>
@@ -148,7 +158,7 @@ export default function MessagesScreen() {
           return (
             <TouchableOpacity
               style={styles.conversationItem}
-              onPress={() => router.push(`/chat/${item.id}`)}
+              onPress={() => router.push(`/Messages/${item.id}`)}  // Correct usage of item.id
             >
               <Text style={styles.conversationText}>
                 Chat with: {otherParticipants}

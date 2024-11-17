@@ -1,19 +1,31 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons'; // Importing icons
+import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native'; // For custom header elements
 import HomeScreen from '../Home/index';
 import BooksScreen from '../Books/index';
 import CafeteriaScreen from '../Cafeteria/index';
 import NotificationsScreen from '../Notifications/index';
 import MessagesScreen from '../Messages/index';
+import { useNavigation } from '@react-navigation/native';
+
 
 const Tab = createBottomTabNavigator();
 
 export default function BottomTabNavigator() {
+
+  const navigation = useNavigation(); // Get navigation object
+
+  const handleLogout = () => {
+    // Clear user session if applicable (e.g., remove tokens)
+    // navigate to login screen
+    navigation.replace('login/signin'); // Use replace to prevent going back
+  };
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        headerShown: false,  // Disable the header for the entire Tab Navigator
+        headerShown: true,  // Show header
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
 
@@ -46,28 +58,171 @@ export default function BottomTabNavigator() {
       <Tab.Screen 
         name="Home" 
         component={HomeScreen} 
-        options={{ headerShown: false }} 
+        options={{
+          headerTitle: () => (
+            <View style={styles.headerContainer}>
+              <Text style={styles.headerTitle}>SU Community</Text>
+              <View style={styles.headerRight}>
+                <TouchableOpacity onPress={() => console.log('profile pressed')}>
+                  <Image 
+                    source={{ uri: 'https://images.unsplash.com/photo-1529778873920-4da4926a72c2?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y3V0ZSUyMGNhdHxlbnwwfHwwfHx8MA%3D%3D' }}  // Replace with your profile image URL
+                    style={styles.profileImage}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleLogout}>
+                  <Ionicons name="log-out" size={24} color="#333" style={styles.logoutIcon} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ),
+          headerStyle: {
+            backgroundColor: '#F4F6FF', // Light background color for header
+            height: 80, // Adjust header height
+            borderBottomWidth: 1,
+            borderBottomColor: '#ccc',
+          },
+        }}
       />
       <Tab.Screen 
         name="Books" 
         component={BooksScreen} 
-        options={{ headerShown: false }} 
+        options={{
+          headerTitle: () => (
+            <View style={styles.headerContainer}>
+              <Text style={styles.headerTitle}>SU Community</Text>
+              <View style={styles.headerRight}>
+                <TouchableOpacity onPress={() => console.log('profile pressed')}>
+                  <Image 
+                    source={{ uri: 'https://images.unsplash.com/photo-1529778873920-4da4926a72c2?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y3V0ZSUyMGNhdHxlbnwwfHwwfHx8MA%3D%3D' }}  // Replace with your profile image URL
+                    style={styles.profileImage}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleLogout}>
+                  <Ionicons name="log-out" size={24} color="#333" style={styles.logoutIcon} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ),
+          headerStyle: {
+            backgroundColor: '#F4F6FF',
+            height: 80,
+            borderBottomWidth: 1,
+            borderBottomColor: '#ccc',
+          },
+        }}
       />
       <Tab.Screen 
         name="Cafeteria" 
         component={CafeteriaScreen} 
-        options={{ headerShown: false }} 
+        options={{
+          headerTitle: () => (
+            <View style={styles.headerContainer}>
+              <Text style={styles.headerTitle}>SU Community</Text>
+              <View style={styles.headerRight}>
+                <TouchableOpacity onPress={() => console.log('Profile pressed')}>
+                  <Image 
+                    source={{ uri: 'https://images.unsplash.com/photo-1529778873920-4da4926a72c2?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y3V0ZSUyMGNhdHxlbnwwfHwwfHx8MA%3D%3D' }}  // Replace with your profile image URL
+                    style={styles.profileImage}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleLogout}>
+                  <Ionicons name="log-out" size={24} color="#333" style={styles.logoutIcon} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ),
+          headerStyle: {
+            backgroundColor: '#F4F6FF',
+            height: 80,
+            borderBottomWidth: 1,
+            borderBottomColor: '#ccc',
+          },
+        }}
       />
       <Tab.Screen 
         name="Notifications" 
         component={NotificationsScreen} 
-        options={{ headerShown: false }} 
+        options={{
+          headerTitle: () => (
+            <View style={styles.headerContainer}>
+              <Text style={styles.headerTitle}>SU Community</Text>
+              <View style={styles.headerRight}>
+                <TouchableOpacity onPress={() => console.log('Profile pressed')}>
+                  <Image 
+                    source={{ uri: 'https://images.unsplash.com/photo-1529778873920-4da4926a72c2?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y3V0ZSUyMGNhdHxlbnwwfHwwfHx8MA%3D%3D' }}  // Replace with your profile image URL
+                    style={styles.profileImage}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleLogout}>
+                  <Ionicons name="log-out" size={24} color="#333" style={styles.logoutIcon} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ),
+            headerStyle: {
+            backgroundColor: '#F4F6FF',
+            height: 80,
+            borderBottomWidth: 1,
+            borderBottomColor: '#ccc',
+          },
+        }}
       />
       <Tab.Screen 
         name="Messages" 
         component={MessagesScreen} 
-        options={{ headerShown: false }} 
+        options={{
+          headerTitle: () => (
+            <View style={styles.headerContainer}>
+              <Text style={styles.headerTitle}>SU Community</Text>
+              <View style={styles.headerRight}>
+                <TouchableOpacity onPress={() => console.log('Profile pressed')}>
+                  <Image 
+                    source={{ uri: 'https://images.unsplash.com/photo-1529778873920-4da4926a72c2?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y3V0ZSUyMGNhdHxlbnwwfHwwfHx8MA%3D%3D' }}  // Replace with your profile image URL
+                    style={styles.profileImage}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleLogout}>
+                  <Ionicons name="log-out" size={24} color="#333" style={styles.logoutIcon} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ),
+          headerStyle: {
+            backgroundColor: '#F4F6FF',
+            height: 80,
+            borderBottomWidth: 1,
+            borderBottomColor: '#ccc',
+          },
+        }}
       />
     </Tab.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    paddingHorizontal: 10,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#F95454',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  profileImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  logoutIcon: {
+    marginLeft: 10,
+  },
+});

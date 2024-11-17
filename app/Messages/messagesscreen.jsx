@@ -1,70 +1,69 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { useRouter } from 'expo-router';
 import { db } from '../../config/FirebaseConfig.js';
+import { collection, doc, getDoc, onSnapshot, addDoc } from 'firebase/firestore';
 
-export default function MessagesScreen() {
-  const [currentUserId, setCurrentUserId] = useState(null);
-  const [conversations, setConversations] = useState([]);
+export default function ChatScreen() {
+  const router = useRouter();
+  const { conversationId } = router.query;  // Get the conversation ID from the URL
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // Fetch the current user's ID from AsyncStorage
   useEffect(() => {
-    const fetchUserId = async () => {
-      try {
-        const userId = await AsyncStorage.getItem('userId');
-        if (userId) {
-          setCurrentUserId(userId);
-        } else {
-          console.error('No user ID found. Ensure login logic is implemented.');
-        }
-      } catch (error) {
-        console.error('Error fetching user ID:', error);
-      }
+    const fetchMessages = async () => {
+      const messagesRef = collection(db, 'conversations', conversationId, 'messages');
+      const unsubscribe = onSnapshot(messagesRef, (snapshot) => {
+        const loadedMessages = snapshot.docs.map(doc => doc.data());
+        setMessages(loadedMessages);
+        setLoading(false);
+      });
+
+      return () => unsubscribe();
     };
 
-    fetchUserId();
-  }, []);
+    if (conversationId) {
+      fetchMessages();
+    }
+  }, [conversationId]);
 
-  // Fetch conversations
-  useEffect(() => {
-    if (!currentUserId) return; // Wait until the user ID is available
+  const handleSendMessage = async () => {
+    if (!newMessage.trim()) return;
 
-    const conversationsRef = collection(db, 'conversations');
-    const q = query(conversationsRef, where('participants', 'array-contains', currentUserId));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const convos = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setConversations(convos);
-      setLoading(false);
+    const messagesRef = collection(db, 'conversations', conversationId, 'messages');
+    await addDoc(messagesRef, {
+      text: newMessage,
+      senderId: 'currentUserId',  // Replace with actual current user ID
+      timestamp: new Date(),
     });
 
-    return unsubscribe;
-  }, [currentUserId]);
-
-  if (!currentUserId) {
-    return <Text>Loading user data...</Text>;
-  }
+    setNewMessage('');
+  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Conversations</Text>
-      {loading ? (
-        <Text>Loading conversations...</Text>
-      ) : (
-        <FlatList
-          data={conversations}
-          renderItem={({ item }) => (
-            <View style={styles.conversation}>
-              <Text>Chat with: {item.participants.filter((id) => id !== currentUserId).join(', ')}</Text>
-            </View>
-          )}
-          keyExtractor={(item) => item.id}
-        />
-      )}
+      <FlatList
+        data={messages}
+        renderItem={({ item }) => (
+          <View style={styles.messageItem}>
+            <Text>{item.senderId}: {item.text}</Text>
+          </View>
+        )}
+        keyExtractor={(item, index) => index.toString()}
+        ListEmptyComponent={loading ? <ActivityIndicator size="large" color="#F95454" /> : null}
+      />
+      
+      <TextInput
+        style={styles.input}
+        placeholder="Type your message..."
+        value={newMessage}
+        onChangeText={setNewMessage}
+      />
+      
+      <TouchableOpacity onPress={handleSendMessage} style={styles.sendButton}>
+        <Text style={styles.sendButtonText}>Send</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -73,18 +72,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    backgroundColor: '#F4F6FF',
+  },
+  messageItem: {
+    padding: 10,
+    marginVertical: 5,
     backgroundColor: '#fff',
+    borderRadius: 5,
   },
-  header: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  conversation: {
-    padding: 15,
+  input: {
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 5,
+    padding: 10,
     marginBottom: 10,
+    borderRadius: 5,
+  },
+  sendButton: {
+    backgroundColor: '#F95454',
+    padding: 10,
+    borderRadius: 5,
+  },
+  sendButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });
