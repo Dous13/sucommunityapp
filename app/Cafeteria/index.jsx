@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet } from 'react-native'
 import React from 'react'
 
-export default function index() {
+export default function CafeteriaScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.text}>Cafeteria Screen Placeholder</Text>

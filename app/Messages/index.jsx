@@ -1,76 +1,163 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
-import { collection, addDoc, query, onSnapshot, orderBy } from 'firebase/firestore';
+import {View,Text,TextInput,FlatList,StyleSheet,TouchableOpacity,ActivityIndicator,} from 'react-native';
+import { useRouter } from "expo-router"; // Import useRouter for navigation
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { db } from '../../config/FirebaseConfig.js';
+import { collection, query, where, addDoc, onSnapshot, getDoc, doc } from 'firebase/firestore';
 
 export default function MessagesScreen() {
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [loading, setLoading] = useState(true);
+  const router = useRouter(); 
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [conversations, setConversations] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const currentUser = 'yourUserId'; // Replace with the actual user ID from your authentication system
-
-  // Fetch messages in real time
   useEffect(() => {
-    const q = query(collection(db, 'messages'), orderBy('timestamp', 'asc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const messagesData = snapshot.docs.map(doc => ({
-        ...doc.data(),
-        id: doc.id,
-        sentByUser: doc.data().senderId === currentUser, // Check if the message was sent by the current user
-      }));
-      setMessages(messagesData);
-      setLoading(false); // Stop loading after messages are fetched
+    const fetchUserId = async () => {
+      const userId = await AsyncStorage.getItem("userId");
+      if (userId) {
+        setCurrentUserId(userId);
+      } else {
+        console.error("No user ID found. Ensure login logic is implemented.");
+      }
+    };
+    fetchUserId();
+  }, []);
+
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    const conversationsRef = collection(db, 'conversations');
+    const q = query(conversationsRef, where('participants', 'array-contains', currentUserId));
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      const convos = await Promise.all(
+        snapshot.docs.map(async (doc) => {
+          const convoData = doc.data();
+          const participants = convoData.participants.filter(id => id !== currentUserId);
+
+          const fetchNames = participants.map(async (id) => {
+            const userDoc = await getDoc(doc(db, 'users', id));
+            return userDoc.exists() ? userDoc.data().displayname : 'Unknown';
+          });
+
+          const displayNames = await Promise.all(fetchNames);
+
+          return {
+            id: doc.id,
+            participants,
+            displayNames,
+            createdAt: convoData.createdAt,
+          };
+        })
+      );
+      setConversations(convos);
     });
 
     return unsubscribe;
-  }, []);
+  }, [currentUserId]);
 
-  // Send a new message
-  const handleSend = async () => {
-    if (newMessage.trim()) {
-      setLoading(true); // Optionally show a loading spinner when sending a message
-      await addDoc(collection(db, 'messages'), {
-        text: newMessage,
-        timestamp: Date.now(),
-        senderId: currentUser, // Store the current user's ID to identify the sender
-      });
-      setNewMessage('');
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+
+    setLoading(true);
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('Email', '==', searchQuery));
+
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      const users = await Promise.all(snapshot.docs.map(async (doc) => {
+        const userData = doc.data();
+        return {
+          id: doc.id,
+          email: userData.Email,
+          displayname: userData.displayname || 'No name available',
+        };
+      }));
+      setSearchResults(users);
       setLoading(false);
+    });
+
+    return () => unsubscribe();
+  };
+
+  const handleStartConversation = async (user) => {
+    if (!currentUserId) return;
+
+    setLoading(true);
+
+    const conversationsRef = collection(db, 'conversations');
+    const existingConversation = conversations.find(
+      (c) => c.participants.includes(user.id)
+    );
+
+    let conversationId;
+    if (existingConversation) {
+      conversationId = existingConversation.id;
+    } else {
+      const newConversation = {
+        participants: [currentUserId, user.id],
+        createdAt: new Date(),
+      };
+      const docRef = await addDoc(conversationsRef, newConversation);
+      conversationId = docRef.id;
     }
+
+    setLoading(false);
+    setSearchQuery('');
+    setSearchResults([]);
+
+    router.push(`/chat/${conversationId}`);
   };
 
   return (
     <View style={styles.container}>
-      {loading ? (
-        <ActivityIndicator size="large" color="#CB3737" />
-      ) : (
-        <FlatList
-          data={messages}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={[styles.message, item.sentByUser && styles.sentMessage]}>
-              <Text style={styles.messageText}>{item.text}</Text>
-              <Text style={styles.timestamp}>{new Date(item.timestamp).toLocaleTimeString()}</Text>
-            </View>
-          )}
-        />
-      )}
-
-      <View style={styles.inputContainer}>
+      <View style={styles.searchContainer}>
         <TextInput
-          style={styles.input}
-          value={newMessage}
-          onChangeText={setNewMessage}
-          placeholder="Message"
+          style={styles.searchInput}
+          placeholder="Search user by email..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
         />
-        <Button 
-          title="Send" 
-          onPress={handleSend} 
-          disabled={loading || !newMessage.trim()}
-          color="#F95454"
-        />
+        <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+          <Text style={styles.searchButtonText}>Search</Text>
+        </TouchableOpacity>
       </View>
+
+      {loading ? (
+        <ActivityIndicator size="large" color="#F95454" />
+      ) : searchResults.length > 0 ? (
+        <FlatList
+          data={searchResults}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.searchResultItem}
+              onPress={() => handleStartConversation(item)}
+            >
+              <Text style={styles.userEmail}>{item.displayname}</Text>
+            </TouchableOpacity>
+          )}
+          keyExtractor={(item) => item.id}
+        />
+      ) : null}
+
+      <Text style={styles.sectionHeader}>Conversations</Text>
+      <FlatList
+        data={conversations}
+        renderItem={({ item }) => {
+          const otherParticipants = item.displayNames.join(', ');
+          return (
+            <TouchableOpacity
+              style={styles.conversationItem}
+              onPress={() => router.push(`/chat/${item.id}`)}
+            >
+              <Text style={styles.conversationText}>
+                Chat with: {otherParticipants}
+              </Text>
+            </TouchableOpacity>
+          );
+        }}
+        keyExtractor={(item) => item.id}
+      />
     </View>
   );
 }
@@ -81,42 +168,51 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#F4F6FF',
   },
-  message: {
-    padding: 10,
-    marginVertical: 5,
-    borderRadius: 15,
-    maxWidth: '75%',
-    backgroundColor: '#ffffff',
-    alignSelf: 'flex-start', // Align received messages to the left
-  },
-  sentMessage: {
-    backgroundColor: '#F95454', // Sent messages have a different background
-    alignSelf: 'flex-end', // Align sent messages to the right
-  },
-  messageText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  timestamp: {
-    fontSize: 12,
-    color: '#aaa',
-    alignSelf: 'flex-end',
-    marginTop: 5,
-  },
-  inputContainer: {
+  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#ccc',
-    padding: 10,
+    marginBottom: 20,
   },
-  input: {
-    height: 45,
+  searchInput: {
     flex: 1,
-    borderRadius: 20,
     backgroundColor: '#fff',
-    paddingHorizontal: 15,
-    marginRight: 10,
+    padding: 10,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  searchButton: {
+    marginLeft: 10,
+    backgroundColor: '#F95454',
+    padding: 10,
+    borderRadius: 5,
+  },
+  searchButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  searchResultItem: {
+    padding: 15,
+    marginVertical: 5,
+    backgroundColor: '#fff',
+    borderRadius: 5,
+  },
+  userEmail: {
+    color: '#333',
+  },
+  sectionHeader: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginVertical: 10,
+    color: '#F95454',
+  },
+  conversationItem: {
+    padding: 15,
+    marginVertical: 5,
+    backgroundColor: '#fff',
+    borderRadius: 5,
+  },
+  conversationText: {
+    color: '#333',
   },
 });

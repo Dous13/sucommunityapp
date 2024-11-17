@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { db } from '../../config/FirebaseConfig'; // Your Firebase config
+import { db } from '../../config/FirebaseConfig'; //Firebase config
 import { collection, query, where, getDocs } from 'firebase/firestore'; // Firestore query methods
 import { useRouter } from 'expo-router'; // Import the router from expo-router
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
 
 export default function SignInPage() {
   const [email, setEmail] = useState('');
@@ -30,11 +31,16 @@ export default function SignInPage() {
         return;
       }
 
-      querySnapshot.forEach((doc) => {
+      querySnapshot.forEach(async (doc) => {
         const userData = doc.data();
 
         if (userData.Password === password) {
           console.log("Sign-in successful!");
+
+          // Save the user ID in AsyncStorage
+          await AsyncStorage.setItem('userId', doc.id);
+          console.log('User ID saved:', doc.id);
+
           setLoading(false); // Stop loading
           router.push('../../navigator/BottomTabNavigator'); // Navigate to BottomTabNavigator
         } else {
@@ -56,7 +62,6 @@ export default function SignInPage() {
         placeholder="Email"
         value={email}
         onChangeText={setEmail}
-        keyboardType="email-address"
         autoCapitalize="none"
       />
       <TextInput
