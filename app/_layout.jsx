@@ -39,7 +39,12 @@ export default function RootLayout() {
   return (
     <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
       <Stack>
-        <Stack.Screen name="index" />
+        <Stack.Screen 
+          name="index"
+          options={{
+            headerShown: false,
+          }}
+        />
         <Stack.Screen
           name="login/index"
           options={{
