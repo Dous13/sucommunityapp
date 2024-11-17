@@ -13,6 +13,7 @@ export default function BottomTabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
+        headerShown: false,  // Disable the header for the entire Tab Navigator
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
 
@@ -36,18 +37,37 @@ export default function BottomTabNavigator() {
               iconName = 'ellipse';
           }
 
-          // Return the appropriate icon component
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: '#F95454', // Primary color
         tabBarInactiveTintColor: '#8F8e8d', // Gray color
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-      <Tab.Screen name="Books" component={BooksScreen} options={{ headerShown: false }} />
-      <Tab.Screen name="Cafeteria" component={CafeteriaScreen} options={{ headerShown: false }} />
-      <Tab.Screen name="Notifications" component={NotificationsScreen} options={{ headerShown: false }} />
-      <Tab.Screen name="Messages" component={MessagesScreen} options={{ headerShown: false }} />
+      <Tab.Screen 
+        name="Home" 
+        component={HomeScreen} 
+        options={{ headerShown: false }} 
+      />
+      <Tab.Screen 
+        name="Books" 
+        component={BooksScreen} 
+        options={{ headerShown: false }} 
+      />
+      <Tab.Screen 
+        name="Cafeteria" 
+        component={CafeteriaScreen} 
+        options={{ headerShown: false }} 
+      />
+      <Tab.Screen 
+        name="Notifications" 
+        component={NotificationsScreen} 
+        options={{ headerShown: false }} 
+      />
+      <Tab.Screen 
+        name="Messages" 
+        component={MessagesScreen} 
+        options={{ headerShown: false }} 
+      />
     </Tab.Navigator>
   );
 }

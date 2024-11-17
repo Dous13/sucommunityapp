@@ -59,6 +59,12 @@ export default function RootLayout() {
             title: 'Post a Book', // Customize the header title
           }}
         />
+        <Stack.Screen
+          name="navigator/BottomTabNavigator"
+          options={{
+            headerShown: false,
+          }}
+        />
       </Stack>
     </ClerkProvider>
   );
