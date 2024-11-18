@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#e0e0e0',
   },
   messageText: {
-    color: '#000',
+    color: 'white',
     fontSize: 16,
   },
   inputContainer: {
