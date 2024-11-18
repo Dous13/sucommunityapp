@@ -70,6 +70,12 @@ export default function RootLayout() {
             headerShown: false,
           }}
         />
+        <Stack.Screen
+          name="Messages/ChatScreen"
+          options={{
+            headerShown: false,
+          }}
+        />
       </Stack>
     </ClerkProvider>
   );
