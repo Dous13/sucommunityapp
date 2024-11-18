@@ -12,7 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { db } from '../../config/FirebaseConfig.js';
-import { collection, query, where, addDoc, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, query, where, addDoc, onSnapshot, orderBy, serverTimestamp } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ChatScreen() {
@@ -47,6 +47,7 @@ export default function ChatScreen() {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
+      console.log('Fetched messages:', snapshot.docs);
       const fetchedMessages = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -66,12 +67,13 @@ export default function ChatScreen() {
       text: newMessage,
       senderId: currentUserId,
       conversationId,
-      timestamp: new Date(),
+      timestamp: serverTimestamp(),
     };
 
     try {
       await addDoc(messagesRef, messageData);
       setNewMessage('');
+      console.log('Message sent:', messageData);
     } catch (error) {
       console.error('Error sending message:', error);
     }
@@ -164,10 +166,11 @@ const styles = StyleSheet.create({
   },
   otherUserMessage: {
     alignSelf: 'flex-start',
-    backgroundColor: '#ccc',
+    backgroundColor: '#e0e0e0',
   },
   messageText: {
-    color: '#fff',
+    color: '#000',
+    fontSize: 16,
   },
   inputContainer: {
     flexDirection: 'row',

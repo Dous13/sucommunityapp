@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons'; // Icons library
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '../../config/FirebaseConfig.js';
 import { collection, query, where, addDoc, onSnapshot, getDoc, doc } from 'firebase/firestore';
@@ -36,38 +37,42 @@ export default function MessagesScreen() {
     fetchUserId();
   }, []);
 
-  // Fetch conversations involving the current user
-  useEffect(() => {
-    if (!currentUserId) return;
-
-    const conversationsRef = collection(db, 'conversations');
-    const q = query(conversationsRef, where('participants', 'array-contains', currentUserId));
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
-      const convos = await Promise.all(
-        snapshot.docs.map(async (doc) => {
-          const convoData = doc.data();
-          const participants = convoData.participants.filter((id) => id !== currentUserId);
-
-          const fetchNames = participants.map(async (id) => {
-            const userDoc = await getDoc(doc(db, 'users', id));
-            return userDoc.exists() ? userDoc.data().displayname : 'Unknown';
-          });
-
-          const displayNames = await Promise.all(fetchNames);
-
-          return {
-            id: doc.id,
-            participants,
-            displayNames,
-            createdAt: convoData.createdAt,
-          };
-        })
-      );
-      setConversations(convos);
-    });
-
-    return unsubscribe;
-  }, [currentUserId]);
+  // Fetch conversations whenever the screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!currentUserId) return;
+  
+      const conversationsRef = collection(db, 'conversations');
+      const q = query(conversationsRef, where('participants', 'array-contains', currentUserId));
+      const unsubscribe = onSnapshot(q, async (snapshot) => {
+        const convos = await Promise.all(
+          snapshot.docs.map(async (document) => {
+            const convoData = document.data();
+            const participants = convoData.participants.filter((id) => id !== currentUserId);
+  
+            // Correctly fetch user details for participants
+            const fetchNames = participants.map(async (participantId) => {
+              const userRef = doc(db, 'users', participantId); // Fixed usage of `doc`
+              const userDoc = await getDoc(userRef);
+              return userDoc.exists() ? userDoc.data().displayname : 'Unknown';
+            });
+  
+            const displayNames = await Promise.all(fetchNames);
+  
+            return {
+              id: document.id,
+              participants,
+              displayNames,
+              createdAt: convoData.createdAt,
+            };
+          })
+        );
+        setConversations(convos);
+      });
+  
+      return () => unsubscribe();
+    }, [currentUserId])
+  );  
 
   // Search for users based on email
   const handleSearch = async () => {
@@ -187,7 +192,7 @@ export default function MessagesScreen() {
               style={styles.profileImage}
             />
             <Text style={styles.conversationText}>
-              Chat with: {item.displayNames.join(', ')}
+              {item.displayNames.join(', ')}
             </Text>
           </TouchableOpacity>
         )}
