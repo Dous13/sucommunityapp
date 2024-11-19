@@ -12,7 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { db } from '../../config/FirebaseConfig.js';
-import { collection, query, where, addDoc, onSnapshot, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, addDoc, onSnapshot, orderBy, serverTimestamp, getDoc, doc } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ChatScreen() {
@@ -21,6 +21,7 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState([]);
   const [currentUserId, setCurrentUserId] = useState(null);
   const [newMessage, setNewMessage] = useState('');
+  const [chatPartnerName, setChatPartnerName] = useState('');
 
   // Fetch current user ID from AsyncStorage
   useEffect(() => {
@@ -34,6 +35,50 @@ export default function ChatScreen() {
     };
     fetchUserId();
   }, []);
+
+  // Fetch the displayname of the other user involved in the conversation
+  useEffect(() => {
+    if (!conversationId || !currentUserId) return;
+  
+    const fetchPartnerDisplayName = async () => {
+      try {
+        // Reference the correct field `participants`
+        const conversationRef = doc(db, 'conversations', conversationId);
+        const conversationSnap = await getDoc(conversationRef);
+  
+        if (conversationSnap.exists()) {
+          const conversationData = conversationSnap.data();
+  
+          // Ensure participants is an array
+          if (conversationData.participants && Array.isArray(conversationData.participants)) {
+            const otherUserId = conversationData.participants.find((id) => id !== currentUserId);
+  
+            if (otherUserId) {
+              // Fetch displayname of the other user
+              const userRef = doc(db, 'users', otherUserId);
+              const userSnap = await getDoc(userRef);
+  
+              if (userSnap.exists()) {
+                setChatPartnerName(userSnap.data().displayname);
+              } else {
+                console.error('User not found');
+              }
+            } else {
+              console.error('Other user ID not found in conversation');
+            }
+          } else {
+            console.error('Participants field is not an array or is undefined');
+          }
+        } else {
+          console.error('Conversation not found');
+        }
+      } catch (error) {
+        console.error('Error fetching partner display name:', error);
+      }
+    };
+  
+    fetchPartnerDisplayName();
+  }, [conversationId, currentUserId]);  
 
   // Real-time listener for messages in this conversation
   useEffect(() => {
@@ -89,7 +134,14 @@ export default function ChatScreen() {
           isCurrentUser ? styles.currentUserMessage : styles.otherUserMessage,
         ]}
       >
-        <Text style={styles.messageText}>{item.text}</Text>
+        <Text
+          style={[
+            styles.messageText,
+            { color: isCurrentUser ? 'white' : 'black' }, // White text for sent messages, black for received
+          ]}
+        >
+          {item.text}
+        </Text>
       </View>
     );
   };
@@ -105,7 +157,7 @@ export default function ChatScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#F95454" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Chat</Text>
+        <Text style={styles.headerTitle}>{chatPartnerName || 'Chat'}</Text>
       </View>
 
       {/* Messages List */}
@@ -162,14 +214,15 @@ const styles = StyleSheet.create({
   },
   currentUserMessage: {
     alignSelf: 'flex-end',
-    backgroundColor: '#F95454',
+    backgroundColor: '#0078FF', // Messenger-like blue for sent messages
+    borderTopRightRadius: 0, // Optional for aesthetic
   },
   otherUserMessage: {
     alignSelf: 'flex-start',
-    backgroundColor: '#e0e0e0',
+    backgroundColor: '#EDEDED', // Light gray for received messages
+    borderTopLeftRadius: 0, // Optional for aesthetic
   },
   messageText: {
-    color: 'white',
     fontSize: 16,
   },
   inputContainer: {

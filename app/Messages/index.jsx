@@ -41,38 +41,44 @@ export default function MessagesScreen() {
   useFocusEffect(
     React.useCallback(() => {
       if (!currentUserId) return;
-  
+
       const conversationsRef = collection(db, 'conversations');
       const q = query(conversationsRef, where('participants', 'array-contains', currentUserId));
+
       const unsubscribe = onSnapshot(q, async (snapshot) => {
         const convos = await Promise.all(
           snapshot.docs.map(async (document) => {
             const convoData = document.data();
             const participants = convoData.participants.filter((id) => id !== currentUserId);
-  
-            // Correctly fetch user details for participants
+
+            // Fetch names of participants
             const fetchNames = participants.map(async (participantId) => {
-              const userRef = doc(db, 'users', participantId); // Fixed usage of `doc`
+              const userRef = doc(db, 'users', participantId);
               const userDoc = await getDoc(userRef);
               return userDoc.exists() ? userDoc.data().displayname : 'Unknown';
             });
-  
+
             const displayNames = await Promise.all(fetchNames);
-  
+
             return {
               id: document.id,
               participants,
               displayNames,
-              createdAt: convoData.createdAt,
+              lastMessage: convoData.lastMessage || 'No messages yet',
+              timestamp: convoData.timestamp?.toDate() || new Date(0), // Default to old date if no timestamp
             };
           })
         );
+
+        // Sort conversations by timestamp (most recent first)
+        convos.sort((a, b) => b.timestamp - a.timestamp);
+
         setConversations(convos);
       });
-  
+
       return () => unsubscribe();
     }, [currentUserId])
-  );  
+  );
 
   // Search for users based on email
   const handleSearch = async () => {
@@ -95,6 +101,7 @@ export default function MessagesScreen() {
             id: doc.id,
             email: userData.Email,
             displayname: userData.displayname || 'No name available',
+            timestamp: convoData.timestamp?.toDate() || new Date(0),
           };
         })
       );
@@ -179,25 +186,33 @@ export default function MessagesScreen() {
       {/* Conversations */}
       <Text style={styles.sectionHeader}>Your Conversations</Text>
       <FlatList
-        data={conversations}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.conversationCard}
-            onPress={() => router.push(`/Messages/ChatScreen?conversationId=${item.id}`)}
-          >
-            <Image
-              source={{
-                uri: 'https://via.placeholder.com/40', // Replace with real image if available
-              }}
-              style={styles.profileImage}
-            />
-            <Text style={styles.conversationText}>
-              {item.displayNames.join(', ')}
-            </Text>
-          </TouchableOpacity>
-        )}
-        keyExtractor={(item) => item.id}
+  data={conversations}
+  renderItem={({ item }) => (
+    <TouchableOpacity
+      style={styles.conversationCard}
+      onPress={() => router.push(`/Messages/ChatScreen?conversationId=${item.id}`)}
+    >
+      <Image
+        source={{
+          uri: 'https://via.placeholder.com/40', // Replace with real image if available
+        }}
+        style={styles.profileImage}
       />
+      <View style={{ flex: 1 }}>
+        <Text style={styles.conversationText}>{item.displayNames.join(', ')}</Text>
+        <Text style={styles.lastMessageText}>{item.lastMessage}</Text>
+      </View>
+      <Text style={styles.timestamp}>
+        {item.timestamp
+          ? item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : '' // Hide timestamp if undefined or null
+        }
+      </Text>
+    </TouchableOpacity>
+  )}
+  keyExtractor={(item) => item.id}
+/>
+
     </View>
   );
 }
