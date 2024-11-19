@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '../../config/FirebaseConfig.js';
-import { collection, query, where, addDoc, onSnapshot, getDoc, doc } from 'firebase/firestore';
+import { collection, query, where, addDoc, onSnapshot, getDoc, doc, getDocs, orderBy, limit } from 'firebase/firestore';
 
 export default function MessagesScreen() {
   const router = useRouter();
@@ -60,12 +60,30 @@ export default function MessagesScreen() {
 
             const displayNames = await Promise.all(fetchNames);
 
+            // Fetch the latest message in the conversation from the messages collection
+            const messagesRef = collection(db, 'messages');
+            const messagesQuery = query(
+              messagesRef,
+              where('conversationId', '==', document.id),
+              orderBy('timestamp', 'desc'),
+              limit(1)
+            );
+            const latestMessageSnapshot = await getDocs(messagesQuery);
+            let lastMessage = 'No messages yet';
+            let timestamp = new Date(0);
+
+            if (!latestMessageSnapshot.empty) {
+              const latestMessageDoc = latestMessageSnapshot.docs[0].data();
+              lastMessage = latestMessageDoc.text;
+              timestamp = latestMessageDoc.timestamp?.toDate() || new Date(0);
+            }
+
             return {
               id: document.id,
               participants,
               displayNames,
-              lastMessage: convoData.lastMessage || 'No messages yet',
-              timestamp: convoData.timestamp?.toDate() || new Date(0), // Default to old date if no timestamp
+              lastMessage,
+              timestamp,
             };
           })
         );
@@ -94,6 +112,7 @@ export default function MessagesScreen() {
     );
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
+      console.log('Search results snapshot:', snapshot.docs); // Debugging line
       const users = await Promise.all(
         snapshot.docs.map(async (doc) => {
           const userData = doc.data();
@@ -101,7 +120,7 @@ export default function MessagesScreen() {
             id: doc.id,
             email: userData.Email,
             displayname: userData.displayname || 'No name available',
-            timestamp: convoData.timestamp?.toDate() || new Date(0),
+            timestamp: new Date(),  // Provide a default date if needed
           };
         })
       );
@@ -186,33 +205,31 @@ export default function MessagesScreen() {
       {/* Conversations */}
       <Text style={styles.sectionHeader}>Your Conversations</Text>
       <FlatList
-  data={conversations}
-  renderItem={({ item }) => (
-    <TouchableOpacity
-      style={styles.conversationCard}
-      onPress={() => router.push(`/Messages/ChatScreen?conversationId=${item.id}`)}
-    >
-      <Image
-        source={{
-          uri: 'https://via.placeholder.com/40', // Replace with real image if available
-        }}
-        style={styles.profileImage}
+        data={conversations}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.conversationCard}
+            onPress={() => router.push(`/Messages/ChatScreen?conversationId=${item.id}`)}
+          >
+            <Image
+              source={{
+                uri: 'https://via.placeholder.com/40', // Replace with real image if available
+              }}
+              style={styles.profileImage}
+            />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.conversationText}>{item.displayNames.join(', ')}</Text>
+              <Text style={styles.lastMessageText}>{item.lastMessage}</Text>
+            </View>
+            <Text style={styles.timestamp}>
+              {item.timestamp
+                ? item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : 'No timestamp available'}
+            </Text>
+          </TouchableOpacity>
+        )}
+        keyExtractor={(item) => item.id}
       />
-      <View style={{ flex: 1 }}>
-        <Text style={styles.conversationText}>{item.displayNames.join(', ')}</Text>
-        <Text style={styles.lastMessageText}>{item.lastMessage}</Text>
-      </View>
-      <Text style={styles.timestamp}>
-        {item.timestamp
-          ? item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          : '' // Hide timestamp if undefined or null
-        }
-      </Text>
-    </TouchableOpacity>
-  )}
-  keyExtractor={(item) => item.id}
-/>
-
     </View>
   );
 }
@@ -237,48 +254,54 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   searchButton: {
-    backgroundColor: '#F95454',
     paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 20,
+    paddingHorizontal: 10,
+    backgroundColor: '#F95454',
+    borderRadius: 30,
   },
   searchButtonText: {
     color: '#fff',
-    fontWeight: 'bold',
   },
   resultCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 10,
-    marginVertical: 5,
-    backgroundColor: '#fff',
-    borderRadius: 10,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
   },
   resultText: {
     marginLeft: 10,
+    fontSize: 16,
     color: '#333',
   },
   sectionHeader: {
     fontSize: 20,
     fontWeight: 'bold',
     marginVertical: 10,
-    color: '#F95454',
   },
   conversationCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 10,
-    marginVertical: 5,
-    backgroundColor: '#fff',
-    borderRadius: 10,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
   },
   profileImage: {
     width: 40,
     height: 40,
     borderRadius: 20,
+    marginRight: 10,
   },
   conversationText: {
-    marginLeft: 10,
+    fontSize: 16,
     color: '#333',
+  },
+  lastMessageText: {
+    fontSize: 14,
+    color: '#8F8E8D',
+  },
+  timestamp: {
+    fontSize: 12,
+    color: '#8F8E8D',
   },
 });
