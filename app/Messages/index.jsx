@@ -27,11 +27,16 @@ export default function MessagesScreen() {
   // Fetch current user ID from AsyncStorage
   useEffect(() => {
     const fetchUserId = async () => {
-      const userId = await AsyncStorage.getItem('userId');
-      if (userId) {
-        setCurrentUserId(userId);
-      } else {
-        console.error('No user ID found. Ensure login logic is implemented.');
+      try {
+        const userId = await AsyncStorage.getItem('userId');
+        if (userId) {
+          console.log('Current User ID:', userId); // Debugging
+          setCurrentUserId(userId);
+        } else {
+          console.error('No user ID found in AsyncStorage.');
+        }
+      } catch (error) {
+        console.error('Error fetching user ID:', error);
       }
     };
     fetchUserId();
@@ -40,12 +45,22 @@ export default function MessagesScreen() {
   // Fetch conversations whenever the screen is focused
   useFocusEffect(
     React.useCallback(() => {
-      if (!currentUserId) return;
+      if (!currentUserId) {
+        console.log('No currentUserId found, skipping conversations fetch.');
+        return;
+      }
 
+      console.log('Fetching conversations for userId:', currentUserId);
       const conversationsRef = collection(db, 'conversations');
       const q = query(conversationsRef, where('participants', 'array-contains', currentUserId));
 
       const unsubscribe = onSnapshot(q, async (snapshot) => {
+        if (snapshot.empty) {
+          console.log('No conversations found for currentUserId:', currentUserId);
+          setConversations([]);
+          return;
+        }
+
         const convos = await Promise.all(
           snapshot.docs.map(async (document) => {
             const convoData = document.data();
@@ -53,14 +68,19 @@ export default function MessagesScreen() {
 
             // Fetch names of participants
             const fetchNames = participants.map(async (participantId) => {
-              const userRef = doc(db, 'users', participantId);
-              const userDoc = await getDoc(userRef);
-              return userDoc.exists() ? userDoc.data().displayname : 'Unknown';
+              try {
+                const userRef = doc(db, 'users', participantId);
+                const userDoc = await getDoc(userRef);
+                return userDoc.exists() ? userDoc.data().displayname : 'Unknown';
+              } catch (error) {
+                console.error(`Error fetching user data for ${participantId}:`, error);
+                return 'Unknown';
+              }
             });
 
             const displayNames = await Promise.all(fetchNames);
 
-            // Fetch the latest message in the conversation from the messages collection
+            // Fetch the latest message in the conversation
             const messagesRef = collection(db, 'messages');
             const messagesQuery = query(
               messagesRef,
@@ -68,14 +88,19 @@ export default function MessagesScreen() {
               orderBy('timestamp', 'desc'),
               limit(1)
             );
-            const latestMessageSnapshot = await getDocs(messagesQuery);
+
             let lastMessage = 'No messages yet';
             let timestamp = new Date(0);
 
-            if (!latestMessageSnapshot.empty) {
-              const latestMessageDoc = latestMessageSnapshot.docs[0].data();
-              lastMessage = latestMessageDoc.text;
-              timestamp = latestMessageDoc.timestamp?.toDate() || new Date(0);
+            try {
+              const latestMessageSnapshot = await getDocs(messagesQuery);
+              if (!latestMessageSnapshot.empty) {
+                const latestMessageDoc = latestMessageSnapshot.docs[0].data();
+                lastMessage = latestMessageDoc.text;
+                timestamp = latestMessageDoc.timestamp?.toDate() || new Date(0);
+              }
+            } catch (error) {
+              console.error('Error fetching latest message:', error);
             }
 
             return {
@@ -90,7 +115,6 @@ export default function MessagesScreen() {
 
         // Sort conversations by timestamp (most recent first)
         convos.sort((a, b) => b.timestamp - a.timestamp);
-
         setConversations(convos);
       });
 
@@ -112,7 +136,6 @@ export default function MessagesScreen() {
     );
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
-      console.log('Search results snapshot:', snapshot.docs); // Debugging line
       const users = await Promise.all(
         snapshot.docs.map(async (doc) => {
           const userData = doc.data();
@@ -120,7 +143,7 @@ export default function MessagesScreen() {
             id: doc.id,
             email: userData.Email,
             displayname: userData.displayname || 'No name available',
-            timestamp: new Date(),  // Provide a default date if needed
+            timestamp: new Date(), // Provide a default date if needed
           };
         })
       );
@@ -213,7 +236,7 @@ export default function MessagesScreen() {
           >
             <Image
               source={{
-                uri: 'https://via.placeholder.com/40', // Replace with real image if available
+                uri: 'https://via.placeholder.com/40',
               }}
               style={styles.profileImage}
             />
@@ -224,7 +247,7 @@ export default function MessagesScreen() {
             <Text style={styles.timestamp}>
               {item.timestamp
                 ? item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                : 'No timestamp available'}
+                : 'No timestamp'}
             </Text>
           </TouchableOpacity>
         )}
@@ -267,24 +290,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderColor: '#ccc',
   },
   resultText: {
     marginLeft: 10,
     fontSize: 16,
-    color: '#333',
   },
   sectionHeader: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginVertical: 10,
+    marginBottom: 10,
   },
   conversationCard: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderColor: '#ccc',
   },
   profileImage: {
     width: 40,
@@ -294,7 +316,7 @@ const styles = StyleSheet.create({
   },
   conversationText: {
     fontSize: 16,
-    color: '#333',
+    fontWeight: 'bold',
   },
   lastMessageText: {
     fontSize: 14,
