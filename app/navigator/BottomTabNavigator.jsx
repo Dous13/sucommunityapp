@@ -7,20 +7,19 @@ import BooksScreen from '../Books/index';
 import CafeteriaScreen from '../Cafeteria/index';
 import NotificationsScreen from '../Notifications/index';
 import MessagesScreen from '../Messages/index';
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 
 
 const Tab = createBottomTabNavigator();
 
 export default function BottomTabNavigator() {
-
-  const navigation = useNavigation(); // Get navigation object
-
+  const router = useRouter();
   const handleLogout = () => {
     // Clear user session if applicable (e.g., remove tokens)
     // navigate to login screen
     navigation.replace('login/signin'); // Use replace to prevent going back
   };
+  
 
   return (
     <Tab.Navigator
@@ -63,7 +62,7 @@ export default function BottomTabNavigator() {
             <View style={styles.headerContainer}>
               <Text style={styles.headerTitle}>SU Community</Text>
               <View style={styles.headerRight}>
-                <TouchableOpacity onPress={() => console.log('profile pressed')}>
+                <TouchableOpacity onPress={() => router.push('../Profile/ProfileScreen')}>
                   <Image 
                     source={{ uri: 'https://images.unsplash.com/photo-1529778873920-4da4926a72c2?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y3V0ZSUyMGNhdHxlbnwwfHwwfHx8MA%3D%3D' }}  // Replace with your profile image URL
                     style={styles.profileImage}
@@ -91,7 +90,7 @@ export default function BottomTabNavigator() {
             <View style={styles.headerContainer}>
               <Text style={styles.headerTitle}>SU Community</Text>
               <View style={styles.headerRight}>
-                <TouchableOpacity onPress={() => console.log('profile pressed')}>
+                <TouchableOpacity onPress={() => router.push('/Profile')}>
                   <Image 
                     source={{ uri: 'https://images.unsplash.com/photo-1529778873920-4da4926a72c2?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y3V0ZSUyMGNhdHxlbnwwfHwwfHx8MA%3D%3D' }}  // Replace with your profile image URL
                     style={styles.profileImage}
@@ -119,7 +118,7 @@ export default function BottomTabNavigator() {
             <View style={styles.headerContainer}>
               <Text style={styles.headerTitle}>SU Community</Text>
               <View style={styles.headerRight}>
-                <TouchableOpacity onPress={() => console.log('Profile pressed')}>
+                <TouchableOpacity onPress={() => router.push('/Profile')}>
                   <Image 
                     source={{ uri: 'https://images.unsplash.com/photo-1529778873920-4da4926a72c2?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y3V0ZSUyMGNhdHxlbnwwfHwwfHx8MA%3D%3D' }}  // Replace with your profile image URL
                     style={styles.profileImage}
@@ -147,7 +146,7 @@ export default function BottomTabNavigator() {
             <View style={styles.headerContainer}>
               <Text style={styles.headerTitle}>SU Community</Text>
               <View style={styles.headerRight}>
-                <TouchableOpacity onPress={() => console.log('Profile pressed')}>
+                <TouchableOpacity onPress={() => router.push('/Profile')}>
                   <Image 
                     source={{ uri: 'https://images.unsplash.com/photo-1529778873920-4da4926a72c2?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y3V0ZSUyMGNhdHxlbnwwfHwwfHx8MA%3D%3D' }}  // Replace with your profile image URL
                     style={styles.profileImage}
@@ -175,7 +174,7 @@ export default function BottomTabNavigator() {
             <View style={styles.headerContainer}>
               <Text style={styles.headerTitle}>SU Community</Text>
               <View style={styles.headerRight}>
-                <TouchableOpacity onPress={() => console.log('Profile pressed')}>
+                <TouchableOpacity onPress={() => router.push('/Profile')}>
                   <Image 
                     source={{ uri: 'https://images.unsplash.com/photo-1529778873920-4da4926a72c2?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y3V0ZSUyMGNhdHxlbnwwfHwwfHx8MA%3D%3D' }}  // Replace with your profile image URL
                     style={styles.profileImage}

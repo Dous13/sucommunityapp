@@ -61,7 +61,7 @@ export default function RootLayout() {
         <Stack.Screen
           name="Books/PostBooks"
           options={{
-            title: 'Post a Book', // Customize the header title
+            title: 'Post a Book',
           }}
         />
         <Stack.Screen
@@ -76,6 +76,7 @@ export default function RootLayout() {
             headerShown: false,
           }}
         />
+        
       </Stack>
     </ClerkProvider>
   );

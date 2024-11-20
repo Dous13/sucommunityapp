@@ -1,39 +1,111 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Image } from 'react-native';
-import { db } from '../../config/FirebaseConfig'; // Adjust this path based on your folder structure
-import { collection, onSnapshot } from 'firebase/firestore';
+import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { db } from '../../config/FirebaseConfig';
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  orderBy,
+  limit,
+  getDocs,
+  doc,
+  getDoc,
+} from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Notifications() {
+  const [currentUserId, setCurrentUserId] = useState(null);
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
-    const notificationsRef = collection(db, 'notifications'); // Firestore collection
-    const unsubscribe = onSnapshot(notificationsRef, (snapshot) => {
-      const notifData = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
-      console.log("Fetched Notifications:", notifData); // Debugging
-      setNotifications(notifData);
-    });
-
-    return () => unsubscribe();
+    const fetchUserId = async () => {
+      const userId = await AsyncStorage.getItem('userId');
+      if (userId) {
+        setCurrentUserId(userId);
+      } else {
+        console.error('No user ID found. Ensure login logic is implemented.');
+      }
+    };
+    fetchUserId();
   }, []);
+
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    const fetchNotifications = async () => {
+      try {
+        const conversationsRef = collection(db, 'conversations');
+        const q = query(
+          conversationsRef,
+          where('participants', 'array-contains', currentUserId)
+        );
+
+        const conversationsSnapshot = await getDocs(q);
+        console.log(
+          'Conversations snapshot:',
+          conversationsSnapshot.docs.map((doc) => doc.data())
+        );
+
+        const notificationsData = [];
+
+        for (const convoDoc of conversationsSnapshot.docs) {
+          const convoData = convoDoc.data();
+          console.log('Processing conversation:', convoData);
+
+          const otherParticipantId = convoData.participants.find(
+            (id) => id !== currentUserId
+          );
+
+          if (!otherParticipantId) continue;
+
+          const messagesRef = collection(db, 'messages');
+          const messagesQuery = query(
+            messagesRef,
+            where('conversationId', '==', convoDoc.id),
+            orderBy('timestamp', 'desc'),
+            limit(1)
+          );
+
+          const messageSnapshot = await getDocs(messagesQuery);
+
+          if (messageSnapshot.empty) continue;
+
+          const latestMessage = messageSnapshot.docs[0].data();
+          console.log('Latest message:', latestMessage);
+
+          const userRef = doc(db, 'users', otherParticipantId);
+          const userDoc = await getDoc(userRef);
+
+          if (!userDoc.exists()) continue;
+
+          const displayName = userDoc.data().displayname || 'Unknown';
+
+          notificationsData.push({
+            id: convoDoc.id,
+            senderName: displayName,
+            message: `${displayName} has sent you a message`,
+            timestamp: latestMessage.timestamp?.toDate(),
+          });
+        }
+
+        notificationsData.sort((a, b) => b.timestamp - a.timestamp);
+        console.log('Final notifications:', notificationsData);
+
+        setNotifications(notificationsData);
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      }
+    };
+
+    fetchNotifications();
+  }, [currentUserId]);
 
   const renderNotification = ({ item }) => (
     <View style={styles.notificationItem}>
-      <Image
-        style={styles.avatar}
-        source={{
-          uri: item.profilePic || 'https://via.placeholder.com/40', // Placeholder profile picture
-        }}
-      />
       <View style={styles.notificationContent}>
-        <Text style={styles.body}>
-          <Text style={styles.username}>{item.username || "Someone"} </Text>
-          {item.body}
-        </Text>
+        <Text style={styles.body}>{item.message}</Text>
+        <Text style={styles.timestamp}>{item.timestamp.toLocaleString()}</Text>
       </View>
     </View>
   );
@@ -72,37 +144,28 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingLeft: 15,
     paddingRight: 10,
-    marginBottom: 0,
-    borderRadius: 0,
     flexDirection: 'row',
-    alignItems: 'center',
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 2,
   },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    marginRight: 15,
-  },
   notificationContent: {
     flex: 1,
-    justifyContent: 'center',
-  },
-  username: {
-    fontWeight: 'bold',
-    color: '#333',
   },
   body: {
     fontSize: 14,
     color: '#555',
   },
+  timestamp: {
+    fontSize: 12,
+    color: '#8F8E8D',
+    marginTop: 5,
+  },
   emptyText: {
     textAlign: 'center',
     fontSize: 16,
-    color: '#8F8e8d',
+    color: '#8F8E8D',
     marginTop: 50,
   },
 });
