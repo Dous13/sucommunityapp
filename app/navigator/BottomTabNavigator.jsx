@@ -9,11 +9,11 @@ import NotificationsScreen from '../Notifications/index';
 import MessagesScreen from '../Messages/index';
 import { useRouter } from 'expo-router';
 
-
 const Tab = createBottomTabNavigator();
 
 export default function BottomTabNavigator() {
   const router = useRouter();
+
   const handleLogout = () => {
     // Clear user session if applicable (e.g., remove tokens)
     // navigate to login screen

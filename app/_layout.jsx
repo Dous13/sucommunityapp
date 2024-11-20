@@ -2,7 +2,6 @@ import { Stack } from "expo-router";
 import { useFonts } from 'expo-font';
 import { ClerkProvider, ClerkLoaded } from '@clerk/clerk-expo';
 import * as SecureStore from 'expo-secure-store';
-import BottomTabNavigator from './navigator/BottomTabNavigator';
 
 const tokenCache = {
   async getToken(key) {

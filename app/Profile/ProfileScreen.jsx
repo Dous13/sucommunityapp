@@ -3,14 +3,9 @@ import { View, Text, Image, StyleSheet } from 'react-native';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../config/FirebaseConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigationOptions } from 'expo-router';
 
 export default function ProfileScreen() {
   const [userData, setUserData] = useState(null);
-
-  useNavigationOptions({
-    headerShown: false, // This hides the header
-  });
 
   useEffect(() => {
     const fetchUserData = async () => {
