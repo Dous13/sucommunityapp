@@ -12,6 +12,16 @@ export default function PostBooks() {
 
   const navigation = useNavigation(); // Get the navigation object
 
+
+  React.useLayoutEffect(() => {
+    // Set header title to an empty string
+    navigation.setOptions({
+      title: '', // Removes "Home/PostBooks" but keeps the back arrow
+    });
+  }, [navigation]);
+
+
+  
   const handleSubmit = () => {
     // Handle the submission of the book details
     console.log({
@@ -22,19 +32,6 @@ export default function PostBooks() {
       price,
       description,
     });
-  };
-
-  const handleCancel = () => {
-    // Clear all input fields when the cancel button is pressed
-    setTitle('');
-    setAuthor('');
-    setGenre('');
-    setCondition('');
-    setPrice('');
-    setDescription('');
-
-    // Navigate back to the "Books" tab
-    navigation.navigate('Books');  // Use 'Books' to navigate back to the Books tab
   };
 
   return (
@@ -91,14 +88,10 @@ export default function PostBooks() {
           onChangeText={setDescription}
         />
 
-        {/* Submit and Cancel buttons */}
+        {/* Submit button only */}
         <View style={styles.buttonContainer}>
           <Pressable style={styles.submitButton} onPress={handleSubmit}>
             <Text style={styles.buttonText}>Post Book</Text>
-          </Pressable>
-
-          <Pressable style={styles.cancelButton} onPress={handleCancel}>
-            <Text style={styles.buttonText}>Cancel</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -133,20 +126,13 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     width: '100%',
     marginTop: 20,
   },
   submitButton: {
     padding: 10,
     backgroundColor: 'red',
-    borderRadius: 5,
-    width: '48%',
-    alignItems: 'center',
-  },
-  cancelButton: {
-    padding: 10,
-    backgroundColor: 'gray',
     borderRadius: 5,
     width: '48%',
     alignItems: 'center',
