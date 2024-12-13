@@ -18,6 +18,7 @@ export default function HomeScreen() {
     setFilteredUsers(filtered);
   };
 
+
   const toggleFollow = (userId) => {
     const updatedUsers = users.map(user =>
       user.id === userId ? { ...user, followed: !user.followed } : user
