@@ -30,7 +30,7 @@ export default function CafeteriaScreen() {
       <View style={styles.itemDetails}>
         <Text style={styles.itemName}>{item.name}</Text>
         <Text style={styles.itemPrice}>{item.price}</Text>
-        <Text style={styles.itemStatus}>{item.status === 'out of stock' ? 'Out of Stock' : 'Available'}</Text>
+        <Text style={styles.itemStatus}>{item.status === 'unavailable' ? 'Unavailable' : 'Available'}</Text>
       </View>
     </View>
   );
