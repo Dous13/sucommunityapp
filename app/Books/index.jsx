@@ -1,44 +1,45 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, FlatList, StyleSheet, Pressable, Modal } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, FlatList, StyleSheet, Pressable, Modal, Button } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
-// Sample books data
-const books = [
-  {
-    title: "The Great Gatsby",
-    author: "F. Scott Fitzgerald",
-    genre: "Classic",
-    condition: "New",
-    price: "$10.99",
-    description: "A novel about the American dream.",
-  },
-  {
-    title: "1984",
-    author: "George Orwell",
-    genre: "Dystopian",
-    condition: "Good",
-    price: "$8.99",
-    description: "A dystopian novel about surveillance.",
-  },
-  {
-    title: "To Kill a Mockingbird",
-    author: "Harper Lee",
-    genre: "Fiction",
-    condition: "Acceptable",
-    price: "$5.99",
-    description: "A novel about racial injustice.",
-  },
-];
+import { useNavigation } from '@react-navigation/native'; // Import for navigation
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { db } from '../../config/FirebaseConfig'; // Make sure this is your Firebase config file
+import { useRouter } from 'expo-router';
 
 export default function Books() {
+  const navigation = useNavigation(); // Hook for navigation
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedAuthor, setSelectedAuthor] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('');
   const [selectedCondition, setSelectedCondition] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const router = useRouter();
 
-  const [filteredBooks, setFilteredBooks] = useState(books);
+  const [books, setBooks] = useState([]);
+  const [filteredBooks, setFilteredBooks] = useState([]);
+
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        const booksCollection = collection(db, 'books');
+        const q = query(booksCollection, orderBy('createdAt', 'desc'));
+        const querySnapshot = await getDocs(q);
+
+        const booksData = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        setBooks(booksData);
+        setFilteredBooks(booksData);
+      } catch (error) {
+        console.error('Error fetching books:', error);
+      }
+    };
+
+    fetchBooks();
+  }, []);
 
   const handleSearch = (text) => {
     setSearchTerm(text);
@@ -78,7 +79,7 @@ export default function Books() {
       );
     }
     if (maxPrice) {
-      filtered = filtered.filter((book) => parseFloat(book.price.slice(1)) <= parseFloat(maxPrice));
+      filtered = filtered.filter((book) => parseFloat(book.price) <= parseFloat(maxPrice));
     }
 
     setFilteredBooks(filtered);
@@ -98,16 +99,17 @@ export default function Books() {
   const renderItem = ({ item }) => (
     <View style={styles.bookItem}>
       <Text style={styles.bookTitle}>{item.title}</Text>
-      <Text>Author: {item.author}</Text>
-      <Text>Genre: {item.genre}</Text>
-      <Text>Condition: {item.condition}</Text>
-      <Text>Price: {item.price}</Text>
-      <Text>Description: {item.description}</Text>
+      <Text style={styles.bookDetails}>Author: {item.author}</Text>
+      <Text style={styles.bookDetails}>Genre: {item.genre}</Text>
+      <Text style={styles.bookDetails}>Condition: {item.condition}</Text>
+      <Text style={styles.bookDetails}>Price: ${item.price}</Text>
+      <Text style={styles.bookDescription}>{item.description}</Text>
     </View>
   );
 
   return (
     <View style={styles.container}>
+      {/* Search and Filter */}
       <View style={styles.searchContainer}>
         <Ionicons name="search" size={20} color="gray" style={styles.searchIcon} />
         <TextInput
@@ -121,13 +123,22 @@ export default function Books() {
         </Pressable>
       </View>
 
+      {/* Add Button to Navigate to PostBook */}
+      <View style={styles.buttonContainer}>
+        <Button
+          title="Post a Book"
+          onPress={() => router.push('/Books/PostBooks')}
+          color="#F95454"
+        />
+      </View>
+
       {filteredBooks.length === 0 ? (
-        <Text style={{ textAlign: 'center', marginTop: 20, color: 'gray' }}>No books found</Text>
+        <Text style={styles.noBooksText}>No books found</Text>
       ) : (
         <FlatList
           data={filteredBooks}
           renderItem={renderItem}
-          keyExtractor={(item) => item.title}
+          keyExtractor={(item) => item.id}
         />
       )}
 
@@ -190,29 +201,54 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 8,
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
   searchIcon: {
     marginHorizontal: 8,
   },
   searchInput: {
     flex: 1,
-    fontSize: 18, // Clearer and larger font
-    fontWeight: '500', // Medium font weight
-    padding: 4,
-    color: '#000000', // Black color for better contrast
+    fontSize: 16,
+    color: '#333',
   },
   filterIcon: {
     marginHorizontal: 8,
   },
+  buttonContainer: {
+    marginBottom: 16,
+  },
   bookItem: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
   bookTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 4,
+  },
+  bookDetails: {
+    fontSize: 14,
+    color: '#555',
+  },
+  bookDescription: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#777',
+  },
+  noBooksText: {
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
+    color: 'gray',
   },
   modalContainer: {
     flex: 1,
@@ -245,16 +281,18 @@ const styles = StyleSheet.create({
   },
   modalApplyButton: {
     backgroundColor: '#F95454',
-    padding: 10,
-    borderRadius: 5,
+    padding: 16,
+    borderRadius: 8,
   },
   modalCancelButton: {
-    backgroundColor: '#CCCCCC',
-    padding: 10,
-    borderRadius: 5,
+    backgroundColor: '#8F8E8D',
+    padding: 16,
+    borderRadius: 8,
   },
   modalButtonText: {
-    color: 'white',
+    color: '#FFFFFF',
     fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
