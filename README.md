@@ -2,6 +2,9 @@
 
 ## Developed by Silliman University Computer Science students
 
-### Installation Requirements to run 
+Installation Requirements to run 
 
-### 1. npm install / npm install --force 2. npx expo start 
+1. install node.js
+2. install expo on your device
+3. npm install / npm install --force
+4. 2. npx expo start 
